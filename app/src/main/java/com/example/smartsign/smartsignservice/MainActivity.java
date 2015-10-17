@@ -6,9 +6,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.Toast;
+import android.view.*;
+import android.widget.*;
+import android.graphics.PixelFormat;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
@@ -16,6 +16,7 @@ import com.loopj.android.http.JsonHttpResponseHandler;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import android.provider.*;
 
 import cz.msebera.android.httpclient.Header;
 
@@ -42,12 +43,15 @@ public class MainActivity extends AppCompatActivity {
         } else {
             setContentView(R.layout.activity_main); // Go to the settings page.
         }
+        Intent serviceIntent = new Intent(this, MainService.class);
+        startService(serviceIntent);
     }
 
 
     public void getYoutubeId(String word){
         AsyncHttpClient smartSignClient = new AsyncHttpClient();
-
+        Toast toast = Toast.makeText(getApplicationContext(),"Find: " + word, Toast.LENGTH_SHORT);
+        toast.show();
         smartSignClient.get(BASE_URL + word, null, new JsonHttpResponseHandler() {
 
             @Override
@@ -118,3 +122,5 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 }
+
+
