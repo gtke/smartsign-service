@@ -66,18 +66,19 @@
             params.gravity = Gravity.BOTTOM;
             params.setTitle("Load Average");
             buttonViewParams = params;
+            WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
+            wm.addView(mView, buttonViewParams);
+            mView.setVisibility(View.INVISIBLE);
         }
         public void showButton(){
             if(!showingWindow) {
-                WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
-                wm.addView(mView, buttonViewParams);
+                mView.setVisibility(View.VISIBLE);
                 showingWindow = true;
             }
         }
         public void hideButton() {
             if(showingWindow) {
-                WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
-                wm.removeView(mView);
+                mView.setVisibility(View.INVISIBLE);
                 showingWindow = false;
             }
         }
@@ -164,7 +165,7 @@
         }
         @Override
         protected void onDraw(Canvas canvas) {
-            canvas.drawColor(Color.BLACK);
+            canvas.drawColor(Color.TRANSPARENT);
 
             canvas.drawBitmap(image, 0, 0, null);
 
