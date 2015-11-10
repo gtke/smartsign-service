@@ -36,39 +36,54 @@ public class MainActivity extends AppCompatActivity {
         if (Intent.ACTION_SEND.equals(action) && type != null) {
             if ("text/plain".equals(type)) {
                 String word = getSharedWord(intent); // Handle text being sent here...
-                getYoutubeId(word);
+                getYoutubeId(word,getApplicationContext());
             } else {
                 setContentView(R.layout.activity_main); // Handle invalid sent data type here...
             }
         } else {
             setContentView(R.layout.activity_main); // Go to the settings page.
         }
+        Switch s = (Switch) findViewById(R.id.phonelistenswitch);
+
+        if (s != null) {
+            s.setOnCheckedChangeListener(new listenSwitchListener(this));
+        }
+        RadioGroup radioSexGroup = (RadioGroup) findViewById(R.id.radioGroup1);
+
+        radioSexGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+
+            public void onCheckedChanged(RadioGroup group, int id) {
+                if(id == R.id.radioButton){
+                    MainService.setImage(MainService.SMARTSIGN_IMAGE);
+                } else if(id == R.id.radioButton2){
+                    MainService.setImage(MainService.CAT_IMAGE);
+                }
+
+            }
+    });
         Intent serviceIntent = new Intent(this, MainService.class);
         startService(serviceIntent);
+        serviceIntent.getComponent();
     }
 
-
-    public void getYoutubeId(String word){
+    public static void getYoutubeId(String word,android.content.Context callContext){
         AsyncHttpClient smartSignClient = new AsyncHttpClient();
-        Toast toast = Toast.makeText(getApplicationContext(),"Find: " + word, Toast.LENGTH_SHORT);
+        final android.content.Context context = callContext;
+        final String lookupWord = word;
+        Toast toast = Toast.makeText(context,"Find: " + word, Toast.LENGTH_SHORT);
         toast.show();
         smartSignClient.get(BASE_URL + word, null, new JsonHttpResponseHandler() {
-
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONArray wordObject) {
                 JSONObject first_word_object;
                 try {
                     first_word_object = (JSONObject) wordObject.get(0);
                     youtubeId = first_word_object.getString("id");
+                    // Open video in Youtube App or Browser.
+                    playYoutubeVideo(youtubeId,context);
                 } catch (JSONException e) {
-                    e.printStackTrace();
+                    Toast.makeText(context,"Failed to find translation for " + lookupWord,Toast.LENGTH_SHORT);
                 }
-
-                System.out.println(youtubeId);
-                Log.d("YoutubeID: ", youtubeId);
-
-                // Open video in Youtube App or Browser.
-                playYoutubeVideo(youtubeId);
             }
 
             @Override
@@ -79,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public String getSharedWord(Intent intent) {
+    private String getSharedWord(Intent intent) {
         String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
         if (sharedText != null) {
             Toast toast = Toast.makeText(getApplicationContext(), sharedText, Toast.LENGTH_SHORT);
@@ -88,14 +103,14 @@ public class MainActivity extends AppCompatActivity {
         return sharedText;
     }
 
-    public void playYoutubeVideo(String youtubeId){
+    private static void playYoutubeVideo(String youtubeId, android.content.Context context){
         try{
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + youtubeId));
-            startActivity(intent);
+            context.startActivity(intent);
         }catch (ActivityNotFoundException ex){
             Intent intent = new Intent(Intent.ACTION_VIEW,
                     Uri.parse("http://www.youtube.com/watch?v="+youtubeId));
-            startActivity(intent);
+            context.startActivity(intent);
         }
 
     }
@@ -122,5 +137,14 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 }
+class listenSwitchListener implements CompoundButton.OnCheckedChangeListener{
 
+    private MainActivity activity;
+    public listenSwitchListener(MainActivity activity){
+        this.activity = activity;
+    }
+    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        MainService.setIsListening(isChecked);
+    }
+}
 

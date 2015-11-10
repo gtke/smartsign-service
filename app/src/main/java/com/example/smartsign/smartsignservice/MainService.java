@@ -50,6 +50,11 @@
         private static String selectedText = "---";
         private WindowManager.LayoutParams buttonViewParams;
         private boolean showingWindow = false;
+        private static boolean isListening = true;
+        private static int imageId;
+        public static int SMARTSIGN_IMAGE = 0;
+        public static int CAT_IMAGE = 1;
+        private static MainService mainService;
         @Override
         public void onCreate() {
             super.onCreate();
@@ -69,6 +74,7 @@
             WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
             wm.addView(mView, buttonViewParams);
             mView.setVisibility(View.INVISIBLE);
+            mainService = this;
         }
         public void showButton(){
             if(!showingWindow) {
@@ -98,37 +104,40 @@
         }
         @Override
         public void onAccessibilityEvent(AccessibilityEvent event) {
-            int eventType = event.getEventType();
-            //just trying to filter down the events we care about to reduce delay/lag
-            if(eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
-                    eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED ||
-                    eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED ||
-                    eventType == AccessibilityEvent.TYPE_VIEW_SELECTED) {
+            //event.getSource().getWindow().getChildCount();
+            if(isListening) {
+                int eventType = event.getEventType();
+                //just trying to filter down the events we care about to reduce delay/lag
+                if (eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
+                        eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED ||
+                        eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED ||
+                        eventType == AccessibilityEvent.TYPE_VIEW_SELECTED) {
 
+                    List<CharSequence> textList = event.getText();
+                    if (textList.size() > 0) {
+                        String text = (textList.get(0)).toString();
+                        int start = event.getFromIndex();
+                        int end = event.getToIndex();
+                        if (start != -1 && end > start && text != null && text.length() > end) {
+                            //i don't think we should do anything in this case
+                        } else {
+                            hideButton();
+                        }
+                    } else {
+                        hideButton();
+                    }
+                }
                 List<CharSequence> textList = event.getText();
                 if (textList.size() > 0) {
                     String text = (textList.get(0)).toString();
                     int start = event.getFromIndex();
                     int end = event.getToIndex();
-                    if (start != -1 && end > start && text != null && text.length() > end) {
-                        //i don't think we should do anything in this case
-                    } else {
-                        hideButton();
+                    if (start != -1 && end > start && text != null && text.length() >= end) {
+                        selectedText = text.substring(start, end);
+                        showButton();
                     }
-                } else {
-                    hideButton();
-                }
-            }
-            List<CharSequence> textList = event.getText();
-            if (textList.size() > 0) {
-                String text = (textList.get(0)).toString();
-                int start = event.getFromIndex();
-                int end = event.getToIndex();
-                if (start != -1 && end > start && text != null && text.length() >= end) {
-                    selectedText = text.substring(start, end);
-                    showButton();
-                }
 
+                }
             }
         }
         public int onStartCommand(Intent intent,int flags,int startId){
@@ -141,8 +150,17 @@
             info.notificationTimeout = 100;
             setServiceInfo(info);
         }
+        public static void setIsListening(boolean value){
+            if(mainService != null){
+                mainService.hideButton();
+            }
+            isListening = value;
+        }
         public String getSelectedText(){
             return selectedText;
+        }
+        public static void setImage(int id){
+            imageId = id;
         }
 
 
@@ -181,12 +199,7 @@
             //return super.onTouchEvent(event);
             if(event.getAction() != MotionEvent.ACTION_OUTSIDE) {
                 String str = service.getSelectedText();
-                Intent intent = new Intent(service,MainActivity.class);
-                intent.putExtra(Intent.EXTRA_TEXT,str);
-                intent.setAction(Intent.ACTION_SEND);
-                intent.setType("text/plain");
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                service.startActivity(intent);
+                MainActivity.getYoutubeId(str,service);
             } else{
 
             }
