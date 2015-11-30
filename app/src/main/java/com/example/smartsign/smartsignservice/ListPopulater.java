@@ -17,6 +17,9 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * Created by drichmond on 11/29/15.
  */
@@ -28,6 +31,7 @@ public class ListPopulater extends BaseAdapter {
     private List<Map<String,String>> data;
     private HashMap<String,Bitmap> imageStore;
     private static LayoutInflater inflater=null;
+
 
     public ListPopulater(Activity a, List<Map<String,String>> data) {
         activity = a;

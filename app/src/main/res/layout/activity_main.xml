@@ -38,7 +38,15 @@
                 android:layout_weight="8"/>
         </LinearLayout>
     </RelativeLayout>
-
+    <ProgressBar
+        android:id="@+id/progressBar1"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/title"
+        android:layout_centerHorizontal="true"
+        android:progressDrawable="@drawable/loading"
+        />
     <ListView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"

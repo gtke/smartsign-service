@@ -24,14 +24,26 @@ import java.util.*;
 import cz.msebera.android.httpclient.Header;
 import android.widget.AdapterView.*;
 import android.app.Activity;
+
 import java.util.regex.*;
 import android.view.View.OnClickListener;
-
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import android.graphics.Matrix;
+import android.widget.ImageView;
+import android.graphics.RectF;
 
 public class MainActivity extends AppCompatActivity {
     private static final String BASE_URL = "http://smartsign.imtc.gatech.edu/videos?keywords=";
+    private boolean isLoaded;
+
+    private Lock loadMutex;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        loadMutex = new ReentrantLock(true);
+        loadMutex.lock();
+        isLoaded = false;
+        loadMutex.unlock();
         super.onCreate(savedInstanceState);
 
         // Get intent, action and MIME type
@@ -39,6 +51,8 @@ public class MainActivity extends AppCompatActivity {
         String action = intent.getAction();
         String type = intent.getType();
         setContentView(R.layout.activity_main);
+        ProgressBar spinner = (ProgressBar)(findViewById(R.id.progressBar1));
+        spinner.setVisibility(View.GONE);
         if (Intent.ACTION_SEND.equals(action) && type != null) {
             if ("text/plain".equals(type)) {
                 String word = getSharedWord(intent); // Handle text being sent here...
@@ -61,46 +75,61 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    public boolean getIsLoaded(){
+        loadMutex.lock();
+        boolean ans = this.isLoaded;
+        loadMutex.unlock();
+        return ans;
+    }
 
     public void getYoutubeList(String word){
+        loadMutex.lock();
+        isLoaded = false;
+        loadMutex.unlock();
         if(word.length() < 0){
             return;
         }
         AsyncHttpClient smartSignClient = new AsyncHttpClient();
         Toast toast = Toast.makeText(getApplicationContext(),"Find: " + word, Toast.LENGTH_SHORT);
         toast.show();
-        final Activity activity = this;
+        final MainActivity activity = this;
+        ProgressBar spinner;
+        spinner = (ProgressBar)findViewById(R.id.progressBar1);
+        spinner.setVisibility(View.VISIBLE);
+        ListView list = (ListView) findViewById(R.id.listView);
+        list.setVisibility(View.INVISIBLE);
+        //networking stuff
         smartSignClient.get(BASE_URL + word, null, new JsonHttpResponseHandler() {
 
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
                 try {
-                    List<Map<String,String>> data = new ArrayList<Map<String,String>>();
+                    List<Map<String, String>> data = new ArrayList<Map<String, String>>();
                     PriorityQueue<Data> primaryData = new PriorityQueue<Data>();
-                    for(int i = 0;i<response.length();i++) {
+                    for (int i = 0; i < response.length(); i++) {
                         JSONObject object = (JSONObject) response.get(i);
                         String youtubeId = object.getString("id");
                         String title = object.getString("title");
                         String thumbnail = object.getString("thumbnail");
 
-                        Map<String,String> item = new HashMap<String,String>();
-                        item.put("title",title);
-                        item.put("thumbnail",thumbnail);
-                        item.put("youtubeId",youtubeId);
+                        Map<String, String> item = new HashMap<String, String>();
+                        item.put("title", title);
+                        item.put("thumbnail", thumbnail);
+                        item.put("youtubeId", youtubeId);
 
                         String keywords = "";
                         JSONArray keywordsObject = object.getJSONArray("keywords");
-                        for(int j = 0;j<keywordsObject.length();j++){
+                        for (int j = 0; j < keywordsObject.length(); j++) {
                             String ans = keywordsObject.getString(j);
                             keywords += ans;
                         }
                         Pattern pat = Pattern.compile("(\\{)(\\d)(\\})");
                         Matcher m = pat.matcher(keywords);
-                        if(m.find()){
-                            try{
+                        if (m.find()) {
+                            try {
                                 int index = Integer.parseInt(m.group(2));
-                                primaryData.add(new Data(index,item));
-                            } catch(Exception e){
+                                primaryData.add(new Data(index, item));
+                            } catch (Exception e) {
                                 data.add(item);
                             }
                         } else {
@@ -108,15 +137,15 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                     int primaryIndex = 0;
-                    while(!primaryData.isEmpty()){
-                       data.add(primaryIndex,primaryData.poll().hashmap);
+                    while (!primaryData.isEmpty()) {
+                        data.add(primaryIndex, primaryData.poll().hashmap);
                         primaryIndex++;
                     }
 
-                    ListView list=(ListView)findViewById(R.id.listView);
+                    ListView list = (ListView) findViewById(R.id.listView);
 
                     // Getting adapter by passing xml data ArrayList
-                    ListPopulater populater=new ListPopulater(activity, data);
+                    ListPopulater populater = new ListPopulater(activity, data);
                     list.setAdapter(populater);
 
 //                    // Click event for single list row
@@ -125,14 +154,16 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onItemClick(AdapterView<?> parent, View view,
                                                 int position, long id) {
-                            TextView text = (TextView)view.findViewById(R.id.youtube_id);
+                            TextView text = (TextView) view.findViewById(R.id.youtube_id);
                             String youtubeId = text.getText().toString();
                             playYoutubeVideo(youtubeId);
                         }
                     });
+                    stopSpinner();
 
                 } catch (JSONException e) {
-                    Toast.makeText(getApplicationContext(),"Failed to populate list",Toast.LENGTH_SHORT);
+                    Toast.makeText(getApplicationContext(), "Failed to populate list", Toast.LENGTH_SHORT);
+                    stopSpinner();
                     e.printStackTrace();
                 }
 
@@ -144,7 +175,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
+    private void stopSpinner(){
+        ProgressBar spinner;
+        spinner = (ProgressBar)findViewById(R.id.progressBar1);
+        spinner.setVisibility(View.GONE);
+        ListView list = (ListView) findViewById(R.id.listView);
+        list.setVisibility(View.VISIBLE);
+    }
 
     public String getSharedWord(Intent intent) {
         String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
