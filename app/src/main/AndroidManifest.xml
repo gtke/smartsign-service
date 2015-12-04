@@ -2,25 +2,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.smartsign.smartsignservice" >
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
     <application
         android:allowBackup="true"
         android:canRetrieveWindowContent="true"
         android:accessibilityEventTypes="typeAllMask"
         android:accessibilityFeedbackType="feedbackAllMask"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/smartsigndictionary"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
-        <service
-            android:name=".MainService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data android:name="android.accessibilityservice"
-                android:resource="@xml/accessibilityservice" />
-        </service>
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name" >
