@@ -1,6 +1,8 @@
 package com.example.smartsign.smartsignservice;
 
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -91,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
         }
         AsyncHttpClient smartSignClient = new AsyncHttpClient();
         Toast toast = Toast.makeText(getApplicationContext(),"Find: " + word, Toast.LENGTH_SHORT);
-        toast.show();
+        //toast.show();
         final MainActivity activity = this;
         ProgressBar spinner;
         spinner = (ProgressBar)findViewById(R.id.progressBar1);
@@ -106,6 +108,13 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     List<Map<String, String>> data = new ArrayList<Map<String, String>>();
                     PriorityQueue<Data> primaryData = new PriorityQueue<Data>();
+                    //Display no videos text if nothing is found
+                    if (response.length() == 0) {
+
+                        TextView text = (TextView) findViewById(R.id.noResults);
+                        text.setText(getResources().getString(R.string.no_videos));
+                    }
+
                     for (int i = 0; i < response.length(); i++) {
                         JSONObject object = (JSONObject) response.get(i);
                         String youtubeId = object.getString("id");
@@ -187,7 +196,7 @@ public class MainActivity extends AppCompatActivity {
         String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
         if (sharedText != null) {
             Toast toast = Toast.makeText(getApplicationContext(), sharedText, Toast.LENGTH_SHORT);
-            toast.show();
+            //toast.show();
         }
         return sharedText;
     }
@@ -220,6 +229,16 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+            alertDialog.setTitle(getResources().getString(R.string.instructions));
+            alertDialog.setMessage(getResources().getString(R.string.instructions_text));
+            alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    });
+            alertDialog.show();
             return true;
         }
 
