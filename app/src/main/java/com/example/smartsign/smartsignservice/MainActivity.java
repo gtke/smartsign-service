@@ -35,17 +35,20 @@ import android.graphics.Matrix;
 import android.widget.ImageView;
 import android.graphics.RectF;
 
+/**
+ * this class represents the only visual activity of this app.  It allows the user to enter in a word, and search
+ * for a sign language translation.  It displays the results in a listview with thumbnail images.  Also, if a word is shared
+ * with the app, it will perform the same task of looking up the word and displaying the results to the user in the activity
+ */
 public class MainActivity extends AppCompatActivity {
     private static final String BASE_URL = "http://smartsign.imtc.gatech.edu/videos?keywords=";
-    private boolean isLoaded;
-
-    private Lock loadMutex;
+    /**
+     * Checks to see if a word was shared with the app.  If so, the app perfors a lookup of the word using 
+     * getYoutubeList(string); Also, sets onClick listener for the search button to get text from textView, and perform
+     * getYoutubeList(string) on whatever text was in the textView.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        loadMutex = new ReentrantLock(true);
-        loadMutex.lock();
-        isLoaded = false;
-        loadMutex.unlock();
         super.onCreate(savedInstanceState);
 
         // Get intent, action and MIME type
@@ -77,18 +80,16 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public boolean getIsLoaded(){
-        loadMutex.lock();
-        boolean ans = this.isLoaded;
-        loadMutex.unlock();
-        return ans;
-    }
-
+    /**
+     * This method's primary purpose is to get and parse information from SmartSign database.
+     * looks up specified word using API call to SmartSign database.  Then returns.  If the lookup is successful, then the
+     * method parses the returned JSON, and generates a List<Map<String, String>> which represents the returned data.  The list
+     * is in priority order as specified by the returned JSON.  Then the method specifies an adapter to be used for the listView, 
+     * and allows the adapter to handle the rest of populating the listview.
+     * @param word the english word to be used in the query to the SmartSign databse.
+     */
     public void getYoutubeList(String word){
-        loadMutex.lock();
-        isLoaded = false;
-        loadMutex.unlock();
-        if(word.length() < 0){
+        if(word == null || word.length() < 0){
             return;
         }
         AsyncHttpClient smartSignClient = new AsyncHttpClient();
@@ -175,8 +176,6 @@ public class MainActivity extends AppCompatActivity {
                     stopSpinner();
                     e.printStackTrace();
                 }
-
-                // Open video in Youtube App or Browser.
             }
 
             @Override
@@ -184,6 +183,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+    /**
+     * stop displaying the progress bar spinner
+     */
     private void stopSpinner(){
         ProgressBar spinner;
         spinner = (ProgressBar)findViewById(R.id.progressBar1);
@@ -192,6 +194,9 @@ public class MainActivity extends AppCompatActivity {
         list.setVisibility(View.VISIBLE);
     }
 
+    /**
+     * get the string that was shared with the app when it was launched, if any text was shared.
+     */
     public String getSharedWord(Intent intent) {
         String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
         if (sharedText != null) {
@@ -200,12 +205,16 @@ public class MainActivity extends AppCompatActivity {
         }
         return sharedText;
     }
-
+    /**
+     * launch another activity to play the youtube video with the specified youtubeId.  The app used
+     * to play the youtube video will depend on preferences of the specific android device, the player is
+     * not part of this app.
+     */
     public void playYoutubeVideo(String youtubeId){
         try{
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + youtubeId));
             startActivity(intent);
-        }catch (ActivityNotFoundException ex){
+        } catch (ActivityNotFoundException ex){
             Intent intent = new Intent(Intent.ACTION_VIEW,
                     Uri.parse("http://www.youtube.com/watch?v="+youtubeId));
             startActivity(intent);
@@ -244,16 +253,29 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
-
+    
+    /**
+     * class used to represent data given by the SmartSign database.  Holds information, and specifies how
+     * to compare the information so it can be put in priority order.
+     */
     class Data implements Comparable<Data> {
         public final Map<String,String> hashmap;
         public final int priority;
 
+        /**
+         * constructor
+         * @priority the number representing the place in priority order of the item.  The lower the number the more important the item is.
+         * @hashmap map of information being represented by this object.
+         */
         public Data(int priority, Map<String,String> hashmap) {
             this.hashmap = hashmap;
             this.priority = priority;
         }
 
+        /**
+         * compares items based on their priority variable.
+         * @param other the other Data object this data object is being compared to.
+         */
         @Override
         public int compareTo(Data other) {
             return Integer.valueOf(priority).compareTo(other.priority);
