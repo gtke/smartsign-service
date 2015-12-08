@@ -22,6 +22,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by drichmond on 11/29/15.
+ * This class is populates the list view with the title of each item,
+ * and uses a seperate thread to load thumbnail images.  It also keeps a map of all used images to avoid 
+ * unnecessary networking.
  */
 public class ListPopulater extends BaseAdapter {
 
@@ -32,7 +35,11 @@ public class ListPopulater extends BaseAdapter {
     private HashMap<String,Bitmap> imageStore;
     private static LayoutInflater inflater=null;
 
-
+    /**
+     * constructor
+     *@param a the activity that holds the list view being populated.
+     *@param data a List of Maps of information representing each item in the list, having "title","youtubeId", and "thumbnail" keys
+     */
     public ListPopulater(Activity a, List<Map<String,String>> data) {
         activity = a;
         this.data=data;
@@ -52,6 +59,14 @@ public class ListPopulater extends BaseAdapter {
         return position;
     }
 
+    /**
+     * returns a view corresponding to the list item at the specified position. The thumbnail for the 
+     * list item won't be part of the returned item until the async task of loading the thumbnail completes, so the
+     * returned view initially won't have the thumbnail.
+     * @position the position of the listview item
+     * @convertView the old view to use, if possible.  
+     * @parent the parent that this view will eventually be attached to.
+     */
     public View getView(int position, View convertView, ViewGroup parent) {
         View view =convertView;
         if(convertView==null)
@@ -77,9 +92,18 @@ public class ListPopulater extends BaseAdapter {
 
         return view;
     }
+    /**
+     * used to manually clear the imageStore, the cached list of images.  If this is cleared, the adapter will need to 
+     * make a networking call to load each of the images in the list.  Use if cached images become stale.
+     */
     public void clear(){
         imageStore.clear();
     }
+    /**
+     * Checks for the specified image in the image store, if the image isn't found
+     * loads images from a url into a Bitmap object.  Then places the image into the specified image view in the UI thread.
+     * Afterwards the method adds the image to the imageStore.
+     */
     private void loadImage(ImageView thumb_image,String str){
         Bitmap bmp = null;
         final ImageView thumb_image2 = thumb_image;
