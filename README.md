@@ -8,6 +8,7 @@ Instructions:
   --To install, simply put the .apk file on your android device and click on it.  Your device should immediately ask if you want to 
     install it.  However, because it won't be from the Play Store, your device will see it as a security risk, so you may receive a 
     special prompt asking if you're sure that you want to install it.
+    
   --To open the source code, use the github url to open pull down the source code in the editor of your choice.
   
 Release Version 1.0.0:
